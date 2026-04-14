@@ -1,0 +1,73 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.game (
+  game_id integer NOT NULL DEFAULT nextval('game_game_id_seq'::regclass),
+  team1_score integer,
+  team2_score integer,
+  date_played date,
+  description character varying,
+  CONSTRAINT game_pkey PRIMARY KEY (game_id)
+);
+CREATE TABLE public.player (
+  player_id integer NOT NULL DEFAULT nextval('player_player_id_seq'::regclass),
+  f_name character varying,
+  l_name character varying,
+  CONSTRAINT player_pkey PRIMARY KEY (player_id)
+);
+CREATE TABLE public.rally (
+  rally_id integer NOT NULL DEFAULT nextval('rally_rally_id_seq'::regclass),
+  rally_number integer,
+  game_id integer,
+  winning_team_id integer,
+  CONSTRAINT rally_pkey PRIMARY KEY (rally_id),
+  CONSTRAINT fk_rallies_game_id FOREIGN KEY (game_id) REFERENCES public.game(game_id),
+  CONSTRAINT fk_rally_winning_team FOREIGN KEY (winning_team_id) REFERENCES public.team(team_id)
+);
+CREATE TABLE public.rally_touch (
+  rally_touch_id integer NOT NULL DEFAULT nextval('rally_touch_rally_touch_id_seq'::regclass),
+  touch_type_id integer,
+  rally_id integer,
+  player_id integer,
+  touch_order character varying,
+  CONSTRAINT rally_touch_pkey PRIMARY KEY (rally_touch_id),
+  CONSTRAINT fk_rally_touch_touch_type_id FOREIGN KEY (touch_type_id) REFERENCES public.touch_type(touch_type_id),
+  CONSTRAINT fk_rally_rally_id FOREIGN KEY (rally_id) REFERENCES public.rally(rally_id),
+  CONSTRAINT fk_rall_touch_player_id FOREIGN KEY (player_id) REFERENCES public.player(player_id)
+);
+CREATE TABLE public.stat (
+  player_id integer NOT NULL,
+  game_id integer NOT NULL,
+  aces integer,
+  rpr numeric,
+  errors integer,
+  strong_set integer,
+  weak_set integer,
+  CONSTRAINT stat_pkey PRIMARY KEY (player_id, game_id),
+  CONSTRAINT fk_stat_player_id FOREIGN KEY (player_id) REFERENCES public.player(player_id),
+  CONSTRAINT fk_stat_game_id FOREIGN KEY (game_id) REFERENCES public.game(game_id)
+);
+CREATE TABLE public.team (
+  team_id integer NOT NULL DEFAULT nextval('team_team_id_seq'::regclass),
+  team_name character varying,
+  CONSTRAINT team_pkey PRIMARY KEY (team_id)
+);
+CREATE TABLE public.team_game (
+  game_id integer NOT NULL,
+  team_id integer NOT NULL,
+  CONSTRAINT team_game_pkey PRIMARY KEY (game_id, team_id),
+  CONSTRAINT fk_team_game_gameid FOREIGN KEY (game_id) REFERENCES public.game(game_id),
+  CONSTRAINT fk_team_game_teamid FOREIGN KEY (team_id) REFERENCES public.team(team_id)
+);
+CREATE TABLE public.team_player (
+  team_id integer NOT NULL,
+  player_id integer NOT NULL,
+  CONSTRAINT team_player_pkey PRIMARY KEY (team_id, player_id),
+  CONSTRAINT fk_team_player_team_id FOREIGN KEY (team_id) REFERENCES public.team(team_id),
+  CONSTRAINT fk_team_player_player_id FOREIGN KEY (player_id) REFERENCES public.player(player_id)
+);
+CREATE TABLE public.touch_type (
+  touch_type_id integer NOT NULL DEFAULT nextval('touch_type_touch_type_id_seq'::regclass),
+  touch_type_name character varying,
+  CONSTRAINT touch_type_pkey PRIMARY KEY (touch_type_id)
+);

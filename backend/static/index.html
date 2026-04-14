@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roundnet Tracker</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <header>
+        <h1>⬤ Roundnet Tracker</h1>
+        <p>stat tracking · rally by rally</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('teams',this)">Teams</button>
+        <button class="tab-btn" onclick="switchTab('games',this)">Games</button>
+        <button class="tab-btn" onclick="switchTab('rally',this)">Rallies</button>
+    </div>
+
+    <!-- TEAMS -->
+    <div id="teams-panel" class="panel active">
+        <div class="card">
+            <h2>Create Team</h2>
+            <label>Team Name</label>
+            <input type="text" id="team-name" placeholder="e.g. Desert Dogs" />
+            <div class="row">
+                <div>
+                    <label>Player 1</label>
+                    <input type="text" id="p1" placeholder="First name" />
+                </div>
+                <div>
+                    <label>Player 2</label>
+                    <input type="text" id="p2" placeholder="First name" />
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="createTeam()">Add Team</button>
+        </div>
+        <div class="card">
+            <h2>Saved Teams</h2>
+            <div id="team-list">
+                <p class="empty-state">No teams yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAMES -->
+    <div id="games-panel" class="panel">
+        <div class="card">
+            <h2>Create Game</h2>
+            <div class="row">
+                <div>
+                    <label>Team 1</label>
+                    <select id="game-t1">
+                        <option value="">Select...</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Team 2</label>
+                    <select id="game-t2">
+                        <option value="">Select...</option>
+                    </select>
+                </div>
+            </div>
+            <label>Date</label>
+            <input type="date" id="game-date" />
+            <label>Description (optional)</label>
+            <textarea id="game-desc" placeholder="Tournament, location, notes..."></textarea>
+            <button class="btn btn-primary" onclick="createGame()">Create Game</button>
+        </div>
+        <div class="card">
+            <h2>Saved Games</h2>
+            <div id="game-list">
+                <p class="empty-state">No games yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RALLY -->
+    <div id="rally-panel" class="panel">
+        <div class="card">
+            <h2>Select Game</h2>
+            <select id="rally-game-sel" onchange="loadGame()">
+                <option value="">Choose a game...</option>
+            </select>
+        </div>
+
+        <div class="card" id="rally-score-card" style="display:none">
+            <h2>Current Score</h2>
+            <div class="score-display">
+                <div class="score-team">
+                    <span id="score-t1-val" class="score-val">0</span>
+                    <span id="score-t1-name" class="score-name">Team 1</span>
+                </div>
+                <div class="score-divider">-</div>
+                <div class="score-team">
+                    <span id="score-t2-val" class="score-val">0</span>
+                    <span id="score-t2-name" class="score-name">Team 2</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="rally-input" style="display:none">
+            <h2>Input Rally</h2>
+            <label>Tap players in touch order</label>
+            <div class="player-buttons" id="player-btns"></div>
+            <div id="rally-sequence"><span
+                    style="color:var(--muted);font-family:var(--font-mono);font-size:0.75rem;">tap players
+                    above...</span></div>
+            <div style="display:flex;gap:0.8rem;margin:1rem 0;">
+                <button class="btn btn-ghost" onclick="undoTouch()">← Undo</button>
+                <button class="btn btn-ghost" onclick="clearRally()">Clear</button>
+            </div>
+            <label>Winner</label>
+            <div class="winner-btns">
+                <button class="winner-btn" id="win-t1" onclick="setWinner(1)">Team 1 wins</button>
+                <button class="winner-btn" id="win-t2" onclick="setWinner(2)">Team 2 wins</button>
+            </div>
+            <button class="btn btn-primary" onclick="saveRally()">Save Rally →</button>
+        </div>
+
+        <div class="card" id="rally-hist" style="display:none">
+            <h2>Rally History</h2>
+            <div id="rally-list">
+                <p class="empty-state">No rallies yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
