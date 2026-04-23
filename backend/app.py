@@ -1,7 +1,8 @@
+from flask import request
 from flask import Flask, jsonify, request, send_from_directory
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from flask_cors import CORS
+from flask_cors import CORS  # front and back can comm on diff ports
 import os
 
 load_dotenv()
@@ -28,7 +29,7 @@ def split_name(name):
 @app.errorhandler(Exception)
 def handle_exception(e):
     """Global error handler for all unhandled exceptions."""
-    # Log the error (optional but recommended)
+    # Log the error
     app.logger.error(f"Unhandled Exception: {str(e)}")
     return jsonify({'error': str(e)}), 500
 
@@ -158,15 +159,20 @@ def create_rally(game_id):
         }).execute()
 
     # 4. Update Game Scores
-    all_rallies = supabase.table('rally').select(
-        'winning_team_id').filter('game_id', 'eq', game_id).execute()
+    # We fetch the game and its team associations using the same logic as get_games
+    # to ensure "team1_score" and "team2_score" match the right teams.
+    game_res = supabase.table('game').select(
+        '*, team_game(team_id)').filter('game_id', 'eq', game_id).execute()
 
-    team_games = supabase.table('team_game').select('team_id').filter(
-        'game_id', 'eq', game_id).order('team_id').execute()
+    if game_res.data and len(game_res.data[0].get('team_game', [])) >= 2:
+        g = game_res.data[0]
+        # Get team IDs in the order they are returned (same as get_games)
+        team_ids = [tg.get('team_id') for tg in g.get('team_game', [])]
+        t1_id = team_ids[0]
+        t2_id = team_ids[1]
 
-    if len(team_games.data) >= 2:
-        t1_id = team_games.data[0]['team_id']
-        t2_id = team_games.data[1]['team_id']
+        all_rallies = supabase.table('rally').select(
+            'winning_team_id').filter('game_id', 'eq', game_id).execute()
 
         t1_score = sum(
             1 for r in all_rallies.data if r['winning_team_id'] == t1_id)
