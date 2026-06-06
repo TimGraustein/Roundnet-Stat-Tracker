@@ -1,6 +1,6 @@
 # Roundnet Stat Tracker
 A web-based tool for tracking Roundnet (Spikeball) games rally-by-rally. This application allows you to manage teams, create games, and input detailed rally statistics, with automatic score calculation.
-(This project was created with the use of Gemini CLI, and cross referenced with Claude Sonnet 4.6 and ChatGPT 5.3 mini)
+This project was created with the use of Gemini CLI and Claude Code (Opus 4.8). Cross referenced with Claude Sonnet 4.6 and ChatGPT 5.3 mini
 
 ## Features
 - **Team Management:** Create and save teams with two players each.
