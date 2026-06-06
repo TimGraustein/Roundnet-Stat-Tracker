@@ -6,26 +6,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Roundnet Tracker</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
 
     <header>
+        <div id="auth-bar">
+            <span id="auth-status">·</span>
+            <button id="auth-login-btn" class="btn btn-ghost auth-btn" onclick="openAuthModal()">Log in</button>
+            <button id="auth-logout-btn" class="btn btn-ghost auth-btn" onclick="logout()" style="display:none">Log
+                out</button>
+        </div>
         <h1>⬤ Roundnet Tracker</h1>
         <p>stat tracking · rally by rally</p>
     </header>
 
     <div class="tabs">
+        <button class="tab-btn" onclick="switchTab('dashboard',this)">Dashboard</button>
         <button class="tab-btn active" onclick="switchTab('teams',this)">Teams</button>
         <button class="tab-btn" onclick="switchTab('games',this)">Games</button>
         <button class="tab-btn" onclick="switchTab('rally',this)">Rallies</button>
+        <button class="tab-btn" onclick="switchTab('players',this)">Players</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-panel" class="panel">
+        <div id="dashboard-content"></div>
     </div>
 
     <!-- TEAMS -->
     <div id="teams-panel" class="panel active">
+        <div class="card" id="claim-card" style="display:none">
+            <h2>Your Player</h2>
+            <div id="claim-claimed" style="display:none">
+                You're linked to <strong id="claim-name"></strong>. Your stats live here.
+            </div>
+            <div id="claim-search">
+                <label>Find yourself in the roster and claim your stats</label>
+                <div class="ac-wrap">
+                    <input type="text" id="claim-input" placeholder="Search your name…" autocomplete="off" />
+                    <div class="ac-results" id="claim-results"></div>
+                </div>
+            </div>
+        </div>
         <div class="card">
             <h2>Create Team</h2>
             <label>Team Name</label>
@@ -33,11 +60,17 @@
             <div class="row">
                 <div>
                     <label>Player 1</label>
-                    <input type="text" id="p1" placeholder="First name" />
+                    <div class="ac-wrap">
+                        <input type="text" id="p1" placeholder="Search or type a name" autocomplete="off" />
+                        <div class="ac-results" id="p1-results"></div>
+                    </div>
                 </div>
                 <div>
                     <label>Player 2</label>
-                    <input type="text" id="p2" placeholder="First name" />
+                    <div class="ac-wrap">
+                        <input type="text" id="p2" placeholder="Search or type a name" autocomplete="off" />
+                        <div class="ac-results" id="p2-results"></div>
+                    </div>
                 </div>
             </div>
             <button class="btn btn-primary" onclick="createTeam()">Add Team</button>
@@ -104,6 +137,7 @@
                     <span id="score-t2-name" class="score-name">Team 2</span>
                 </div>
             </div>
+            <button class="btn btn-complete" onclick="openCompleteModal()" style="width:100%;margin-top:1rem;">Complete Game</button>
         </div>
 
         <div class="card" id="rally-input" style="display:none">
@@ -117,11 +151,21 @@
                 <button class="btn btn-ghost" onclick="undoTouch()">← Undo</button>
                 <button class="btn btn-ghost" onclick="clearRally()">Clear</button>
             </div>
-            <label>Winner</label>
-            <div class="winner-btns">
-                <button class="winner-btn" id="win-t1" onclick="setWinner(1)">Team 1 wins</button>
-                <button class="winner-btn" id="win-t2" onclick="setWinner(2)">Team 2 wins</button>
+            <label>How did the rally end?</label>
+            <div class="outcome-btns">
+                <button class="outcome-btn" id="oc-kill" onclick="setOutcome('kill')">Kill</button>
+                <button class="outcome-btn" id="oc-error" onclick="setOutcome('error')">Error</button>
+                <button class="outcome-btn" id="oc-ace" onclick="setOutcome('ace')">Ace</button>
+                <button class="outcome-btn" id="oc-other" onclick="setOutcome('other')">Other</button>
             </div>
+            <div id="winner-row" style="display:none">
+                <label>Which team won?</label>
+                <div class="winner-btns">
+                    <button class="winner-btn" id="win-t1" onclick="setWinner(1)">Team 1 wins</button>
+                    <button class="winner-btn" id="win-t2" onclick="setWinner(2)">Team 2 wins</button>
+                </div>
+            </div>
+            <div id="outcome-result" class="outcome-result"></div>
             <button class="btn btn-primary" onclick="saveRally()">Save Rally →</button>
         </div>
 
@@ -133,7 +177,63 @@
         </div>
     </div>
 
+    <!-- PLAYERS LOOKUP -->
+    <div id="players-panel" class="panel">
+        <div class="card">
+            <h2>Player Lookup</h2>
+            <label>Search any player to see their stats</label>
+            <div class="ac-wrap">
+                <input type="text" id="lookup-input" placeholder="Search a name…" autocomplete="off" />
+                <div class="ac-results" id="lookup-results"></div>
+            </div>
+        </div>
+        <div id="lookup-profile">
+            <p class="empty-state" style="text-align:center">Search for a player above.</p>
+        </div>
+    </div>
+
     <div id="toast"></div>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="modal-overlay" style="display:none" onclick="handleAuthBackdrop(event)">
+        <div class="modal-box" style="max-width:380px">
+            <h2 id="auth-title">Log In</h2>
+            <p id="auth-msg" style="margin-bottom:1rem">Log in to record teams, games, and rallies.</p>
+            <label>Email</label>
+            <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" />
+            <label>Password</label>
+            <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+            <button class="btn btn-primary" id="auth-submit" onclick="submitAuth()"
+                style="width:100%;margin-top:0.5rem">Log In</button>
+            <p style="margin:1rem 0 0;text-align:center">
+                <span id="auth-toggle-text">Need an account?</span>
+                <a href="#" id="auth-toggle-link" onclick="toggleAuthMode(event)"
+                    style="color:var(--accent);font-weight:600">Sign up</a>
+            </p>
+            <button class="btn btn-ghost" onclick="closeAuthModal()"
+                style="margin-top:1rem;width:100%">Cancel</button>
+        </div>
+    </div>
+
+    <!-- COMPLETE GAME MODAL -->
+    <div id="complete-modal" class="modal-overlay" style="display:none" onclick="handleModalBackdrop(event)">
+        <div class="modal-box">
+            <div id="modal-confirm">
+                <h2>Complete Game?</h2>
+                <p>Stats will be calculated and saved for all players in this game.</p>
+                <div class="modal-btns">
+                    <button class="btn btn-ghost" onclick="closeModal()">No, go back</button>
+                    <button class="btn btn-danger" onclick="confirmComplete()">Yes, complete</button>
+                </div>
+            </div>
+            <div id="modal-stats" style="display:none">
+                <h2>Game Summary</h2>
+                <div id="modal-final-score"></div>
+                <div id="modal-stats-table"></div>
+                <button class="btn btn-ghost" onclick="closeModal()" style="margin-top:1.2rem;width:100%">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/app.js"></script>
 </body>
